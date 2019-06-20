@@ -1,0 +1,239 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+
+namespace ConsoleApplication2
+{
+    class Program
+    {
+        static void Main()
+        {
+
+            int RowCount = 5;
+            int ColumnCount = 100;
+            int CountNeuron = 6;
+            double[,] _x = new double[RowCount, ColumnCount];
+            Random rnd = new Random();
+            double[] norma = new double[ColumnCount];
+            double[,] _w = new double[RowCount, CountNeuron];
+            double[] norm = new double[CountNeuron];
+            StreamWriter writer = new StreamWriter("writer.txt");
+
+            //Console.WriteLine("Нормализованная матрица входных векторов X");
+            //Console.WriteLine();
+            writer.WriteLine("Нормализованная матрица входных векторов Х");
+            writer.WriteLine();
+           
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    _x[i, j] = rnd.Next(0, 11);
+                    _x[i, j] = _x[i, j] / 10;
+                }
+            }
+            
+            for (int j = 0; j < ColumnCount; j++)
+            {
+                for (int i = 0; i < RowCount; i++)
+                {
+                    norma[j] = norma[j] + _x[i, j] * _x[i, j];
+                    norma[j] = Math.Sqrt(norma[j]);
+                }
+            }
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < ColumnCount; j++)
+                {
+                    _x[i, j] = _x[i, j] / norma[j];
+                    //Console.Write(Math.Round(_x[i, j], 1) + " ");
+                   writer.Write(Math.Round(_x[i, j], 1) + " ");
+                }
+                //Console.WriteLine();
+                writer.WriteLine();
+            }
+            //Console.WriteLine();
+            writer.WriteLine();
+            Console.WriteLine("нормализованная матрица весов W");
+            writer.WriteLine("нормализованная матрица весов");
+            Console.WriteLine();
+            writer.WriteLine();
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < CountNeuron; j++)
+                {
+                    _w[i, j] = rnd.Next(0, 11);
+                    //_w[i, j] = _w[i, j] / 10;
+                    _w[i, j] = _w[i, j];
+                }
+            }
+            Console.WriteLine();
+            writer.WriteLine();
+            for (int i = 0; i < CountNeuron; i++)
+            {
+                for (int j = 0; j < RowCount; j++)
+                {
+                    norm[i] = norm[i] + _w[j, i] * _w[j, i];
+                    norm[i] = Math.Sqrt(norm[i]);
+                }
+            }
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < CountNeuron; j++)
+                {
+                    _w[i, j] = _w[i, j] / norm[j];
+                    Console.Write(Math.Round(_w[i, j], 1) + " ");
+                    writer.Write(Math.Round(_w[i, j], 1) + " ");
+                }
+                Console.WriteLine();
+                writer.WriteLine();
+            }
+            Console.WriteLine();
+            writer.WriteLine();
+           
+            for (int xk = 0; xk < ColumnCount; xk++)
+            {
+                double[] s = new double[CountNeuron];
+                for (int i = 0; i < CountNeuron; i++)
+                {
+                    for (int j = 0; j < RowCount; j++)
+                    {
+                        s[i] += _w[j, i] * _x[j, xk];
+                    }
+                    //Console.Write(Math.Round(s[i], 1) + " ");
+                    writer.Write(Math.Round(s[i], 1) + " ");
+                }
+                //Console.WriteLine();
+                writer.WriteLine();
+              
+                double max = s[0];
+                int index = 0;
+                for (int i = 0; i < CountNeuron; i++)
+                {
+                    if (s[i] > max)
+                    {
+                        max = s[i];
+                        index = i;
+                    }
+                }
+                //Console.Write("нейрон победитель {0} со значением {1}", index + 1, Math.Round(max, 1));
+                //Console.WriteLine();
+                writer.Write("нейрон победитель {0} со значением {1}", index + 1, Math.Round(max, 1));
+                writer.WriteLine();
+                //Console.WriteLine();
+
+                double etta;
+                int okrL,okrR;
+
+                if (xk <= 40) { etta = 0.7; okrL = 2; }
+                if (40 < xk && xk < 70) { etta = 0.5; okrL = 1; okrR = 1; }
+                if (70 < xk && xk < 80) { etta = 0.3; okrL = 1; okrR = 1; }
+                if (80 < xk && xk < 95) { etta = 0.1; okrL = 1; okrR = 1; }               
+                else { etta = 0.05; okrL = 0; okrR = 0; }
+
+                for (int i = 0; i < RowCount; i++)
+                {
+                    if (index + okrR > CountNeuron)
+                    {
+                        okrR = CountNeuron - index;
+                        _w[i, index] = _w[i, index] + etta * (_x[i, xk] - _w[i, index]);
+                        _w[i, index + okrR] = _w[i, index + okrR] + etta * 0.1 * (_x[i, xk] - _w[i, index + okrR]);
+                        _w[i, index - okrL] = _w[i, index - okrL] + etta * 0.1 * (_x[i, xk] - _w[i, index - okrL]);                      
+                        _w[i, index - okrL - 1] = _w[i, index - okrL - 1] + etta * 0.5 * (_x[i, xk] - _w[i, index - okrL - 1]);
+                    }
+                    if (index - okrL < 0)
+                    { 
+                        okrL = index;
+                        _w[i, index] = _w[i, index] + etta * (_x[i, xk] - _w[i, index]);
+                        _w[i, index + okrR] = _w[i, index + okrR] + etta * 0.1 * (_x[i, xk] - _w[i, index + okrR]);
+                        _w[i, index - okrL] = _w[i, index - okrL] + etta * 0.1 * (_x[i, xk] - _w[i, index - okrL]);
+                        _w[i, index + okrR - 1] = _w[i, index + okrR - 1] + etta * 0.5 * (_x[i, xk] - _w[i, index + okrR - 1]);
+                    }
+                    
+                }
+
+                double[] n = new double[CountNeuron];
+                for (int i = 0; i < CountNeuron; i++)
+                {
+                    for (int j = 0; j < RowCount; j++)
+                    {
+                        n[i] = n[i] + _w[j, i] * _w[j, i];
+                        n[i] = Math.Sqrt(n[i]);
+                    }
+                }
+                for (int i = 0; i < RowCount; i++)
+                {
+                    for (int j = 0; j < CountNeuron; j++)
+                    {
+                        _w[i, j] = _w[i, j] / n[j];
+                        //Console.Write(Math.Round(_w[i, j], 1) + " ");
+                        writer.Write(Math.Round(_w[i,j],1)+ " ");
+                    }
+                    //Console.WriteLine();
+                    writer.WriteLine();
+                }
+                //Console.WriteLine();
+                writer.WriteLine();
+            }
+            Console.WriteLine("матрица весов после обучения");
+            writer.WriteLine();
+            for (int i = 0; i < RowCount; i++)
+            {
+                for (int j = 0; j < CountNeuron; j++)
+                {
+                    Console.Write(Math.Round(_w[i, j], 1) + " ");
+                    //writer.Write(Math.Round(_w[i, j], 1) + " ");
+                }
+                Console.WriteLine();
+                //writer.WriteLine();
+            }
+            writer.Close();
+            
+            Console.WriteLine();
+            Console.WriteLine("введите вектор размерности {0}", RowCount);
+
+            string input = Console.ReadLine();
+            List<double[]> vectors = new List<double[]>();
+            while (!string.IsNullOrEmpty(input))
+            {
+                string[] numbers = input.Split(new[] { ' ' });
+                double[] vec = new double[numbers.Length];
+                for (int i = 0; i < numbers.Length; i++)
+                {
+                    vec[i] = Convert.ToDouble(numbers[i]);
+                }
+                vectors.Add(vec);
+                input = Console.ReadLine();
+            }
+             foreach( var vector in vectors)
+             {
+                 double[] h = new double [CountNeuron];                 
+                 for (int i = 0; i < CountNeuron; i++)
+                 {
+                     for (int j = 0; j < vector.Length; j++)
+                     {
+                         h[i] += (_w[j, i] - vector[j]) * (_w[j, i] - vector[j]);
+                     }
+                     h[i] = Math.Sqrt(h[i]);
+                     Console.Write(Math.Round(h[i],3) + " "); 
+                 }
+                 Console.WriteLine();
+                 
+                 double min = h[0];
+                 int cl = 0;
+                 for (int i = 0; i < CountNeuron; i++)
+                 {
+                     if (h[i] < min)
+                     {
+                         min = h[i];
+                         cl = i;
+                     }
+                 }
+                 Console.WriteLine("вектор отнесен к классу {0}",cl+1);
+                 Console.WriteLine();
+             }
+        }
+    }
+}
